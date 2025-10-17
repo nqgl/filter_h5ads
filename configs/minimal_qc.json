@@ -1,0 +1,15 @@
+{
+  "pipeline_name": "minimal_qc",
+  "umi_filter": {
+    "enabled": true,
+    "min_counts": 15000,
+    "count_column": "total_counts"
+  },
+  "guide_filter": {
+    "enabled": true,
+    "guide_column": "pass_guide_filter",
+    "required_value": 1
+  },
+  "mito_filter": null,
+  "gene_filter": null
+}
