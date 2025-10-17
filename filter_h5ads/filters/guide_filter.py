@@ -3,17 +3,15 @@
 Filters cells based on whether they passed guide pairing QC in CRISPR screens.
 """
 
-import logging
 from typing import Any
 
 import pandas as pd
 from anndata import AnnData
+from loguru import logger
 from pydantic import Field
 
 from filter_h5ads.filters.base import FilterStepConfig, _ensure_in_memory
 from filter_h5ads.utils import calculate_filter_stats, validate_h5ad_columns
-
-logger = logging.getLogger(__name__)
 
 
 class GuideFilterConfig(FilterStepConfig):

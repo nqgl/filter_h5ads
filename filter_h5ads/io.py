@@ -3,17 +3,15 @@
 Handles file operations with proper naming conventions based on config hashing.
 """
 
-import logging
 import os
 from pathlib import Path
 from typing import Any
 
 from anndata import AnnData, read_h5ad
+from loguru import logger
 
 from filter_h5ads.config import FilterPipelineConfig
 from filter_h5ads.pipeline import run_pipeline, validate_pipeline_config
-
-logger = logging.getLogger(__name__)
 
 # Global flag to control backed mode loading
 # Set LOAD_AD_BACKED=1 environment variable to load h5ad files in backed mode

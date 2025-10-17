@@ -4,16 +4,14 @@ Filters cells with too few detected genes, which typically indicates
 low-quality cells in single-cell experiments.
 """
 
-import logging
 from typing import Any
 
 from anndata import AnnData
+from loguru import logger
 from pydantic import Field
 
 from filter_h5ads.filters.base import FilterStepConfig, _ensure_in_memory
 from filter_h5ads.utils import calculate_filter_stats, validate_h5ad_columns
-
-logger = logging.getLogger(__name__)
 
 
 class GeneDetectionFilterConfig(FilterStepConfig):

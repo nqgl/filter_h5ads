@@ -1,23 +1,28 @@
 """Utility functions for validation, logging, and helper operations."""
 
-import logging
 from typing import Any
 
 import pandas as pd
 from anndata import AnnData
+from loguru import logger
 
 
 def setup_logging(level: str = "INFO") -> None:
-    """Configure logging for the package.
+    """Configure logging for the package using loguru.
 
     Args:
         level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
     """
-    logging.basicConfig(
-        level=getattr(logging, level.upper()),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
+    # Remove default handler and add configured one
+    logger.remove()
+    logger.add(
+        lambda msg: print(msg, end=""),
+        level=level.upper(),
+        format=(
+            "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+            "<level>{level: <8}</level> | <level>{message}</level>"
+        ),
     )
 
 

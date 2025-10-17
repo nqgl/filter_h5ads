@@ -4,13 +4,11 @@ Contains the FilterStepConfig base class that all filter configurations inherit 
 and shared utility functions used across filter implementations.
 """
 
-import logging
 from typing import Any
 
 from anndata import AnnData
+from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field
-
-logger = logging.getLogger(__name__)
 
 
 class FilterStepConfig(BaseModel):

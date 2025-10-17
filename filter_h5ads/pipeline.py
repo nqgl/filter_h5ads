@@ -4,15 +4,14 @@ Provides functions to execute a complete filtering pipeline and track
 provenance information.
 """
 
-import logging
+import time
 from datetime import datetime
 from typing import Any
 
 from anndata import AnnData
+from loguru import logger
 
 from filter_h5ads.config import FilterPipelineConfig
-
-logger = logging.getLogger(__name__)
 
 
 def run_pipeline(
@@ -37,23 +36,32 @@ def run_pipeline(
         Tuple of (filtered AnnData, list of statistics from each step)
 
     """
-    logger.info(f"Starting pipeline: {config.pipeline_name}")
-    logger.info(f"Initial cell count: {adata.n_obs:,}")
+    pipeline_start = time.time()
+
+    logger.info(f"🚀 Starting pipeline: {config.pipeline_name}")
+    logger.info(
+        f"📊 Initial dimensions: {adata.n_obs:,} cells × {adata.n_vars:,} genes"
+    )
 
     # Get enabled filters in order
     enabled_filters = config.get_enabled_filters()
 
     if not enabled_filters:
-        logger.warning("No filters enabled in pipeline configuration")
+        logger.warning("⚠️  No filters enabled in pipeline configuration")
         return adata.copy(), []
+
+    logger.info(f"🔧 {len(enabled_filters)} filters enabled")
 
     # Track statistics from each step
     all_stats: list[dict[str, Any]] = []
 
     # Apply filters sequentially
     adata_current = adata
-    for filter_name, filter_config in enabled_filters:
-        logger.info(f"Applying {filter_name}...")
+    for i, (filter_name, filter_config) in enumerate(enabled_filters, 1):
+        step_start = time.time()
+        logger.info(f"\n{'=' * 60}")
+        logger.info(f"📍 Step {i}/{len(enabled_filters)}: {filter_name}")
+        logger.info(f"{'=' * 60}")
 
         # Apply the filter
         adata_current, stats = filter_config.apply(adata_current)
@@ -61,17 +69,30 @@ def run_pipeline(
         # Store statistics
         all_stats.append(stats)
 
-        # Log progress
+        step_time = time.time() - step_start
+
+        # Log progress with timing
+        logger.success(f"✅ {filter_name} complete in {step_time:.2f}s")
         logger.info(
-            f"  → {stats['n_cells_after']:,} cells remaining "
-            f"({stats['pct_retained']:.1f}% retained)",
+            f"   Cells: {stats['n_cells_before']:,} → {stats['n_cells_after']:,} "
+            f"({stats['pct_retained']:.1f}% retained, "
+            f"{stats['n_cells_removed']:,} removed)"
         )
 
     # Add provenance information
+    logger.info("\n📝 Adding provenance information...")
     adata_final = add_provenance(adata_current, config, all_stats)
 
+    pipeline_time = time.time() - pipeline_start
+
+    logger.success(f"\n{'=' * 60}")
+    logger.success(
+        f"🎉 Pipeline complete in {pipeline_time:.2f}s ({pipeline_time / 60:.1f} min)"
+    )
+    logger.success(f"{'=' * 60}")
     logger.info(
-        f"Pipeline complete: {adata_final.n_obs:,} / {adata.n_obs:,} cells retained"
+        f"📊 Final result: {adata_final.n_obs:,} / {adata.n_obs:,} cells retained "
+        f"({adata_final.n_obs / adata.n_obs * 100:.1f}%)"
     )
 
     return adata_final, all_stats

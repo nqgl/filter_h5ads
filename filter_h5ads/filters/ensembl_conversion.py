@@ -4,7 +4,7 @@ Converts gene names to Ensembl IDs for both target genes and variable names,
 and filters based on allowed gene sets for CRISPR screen data.
 """
 
-import logging
+import time
 from typing import Any
 
 import numpy as np
@@ -12,11 +12,10 @@ import pandas as pd
 import scipy.sparse as sp
 from anndata import AnnData
 from comlm.config.data_configs import SafeGeneSymbolRemappingRef
+from loguru import logger
 from pydantic import ConfigDict, Field
 
 from filter_h5ads.filters.base import FilterStepConfig
-
-logger = logging.getLogger(__name__)
 
 
 def convert_gene_labels(
@@ -108,7 +107,7 @@ class EnsemblConversionConfig(FilterStepConfig):
             ValueError: If required columns are missing or conflicts detected
 
         """
-        logger.info("Starting Ensembl ID conversion")
+        logger.info("🧬 Starting Ensembl ID conversion")
 
         # Validate input
         if self.source_target_column not in adata.obs.columns:
@@ -118,16 +117,26 @@ class EnsemblConversionConfig(FilterStepConfig):
             )
 
         # Open the gene remapping reference
+        logger.debug("  Loading gene remapping reference...")
+        t0 = time.time()
         gene_remapping = self.gene_remapping_ref.open_target()
+        logger.debug(f"  ✓ Gene remapping loaded in {time.time() - t0:.2f}s")
 
         # Get the mask
+        logger.debug("  Getting mask...")
+        t0 = time.time()
         mask = self.mask_getter()
         mask_set = set(mask) if isinstance(mask, list) else mask
+        logger.info(
+            f"  ✓ Mask retrieved: {len(mask_set):,} genes ({time.time() - t0:.2f}s)"
+        )
 
         # Handle backed mode: convert to memory if needed
         if adata.isbacked:
-            logger.info("  Converting backed AnnData to memory for processing")
+            logger.info("  ⚠️  Converting backed AnnData to memory for processing...")
+            t0 = time.time()
             adata = adata.to_memory()
+            logger.info(f"  ✓ Loaded into memory in {time.time() - t0:.2f}s")
 
         # Capture stats before modification (avoid full copy for memory efficiency)
         n_cells_initial = adata.n_obs
@@ -136,20 +145,26 @@ class EnsemblConversionConfig(FilterStepConfig):
         # ============================================================================
         # Step 1: Create target_gene column and filter cells
         # ============================================================================
+        step1_start = time.time()
         logger.info(
-            f"Step 1: Converting {self.source_target_column} → "
+            f"📍 Step 1: Converting {self.source_target_column} → "
             f"{self.target_column_name}"
         )
 
         # Copy and normalize the gene_target column
+        logger.debug(f"  Copying {n_cells_initial:,} target genes...")
+        t0 = time.time()
         target_genes = adata.obs[self.source_target_column]
         assert isinstance(target_genes, pd.Series)
         target_genes = target_genes.copy()
+        logger.debug(f"  ✓ Copied in {time.time() - t0:.2f}s")
 
         # Normalize: "Non-Targeting" → "non-targeting"
         target_genes = target_genes.replace("Non-Targeting", "non-targeting")
 
         # Convert gene names to Ensembl IDs (no filtering yet)
+        logger.debug(f"  Converting {len(target_genes):,} gene labels...")
+        t0 = time.time()
         try:
             converted_targets = convert_gene_labels(
                 labels=target_genes.tolist(),
@@ -158,11 +173,14 @@ class EnsemblConversionConfig(FilterStepConfig):
             )
         except ValueError as e:
             raise ValueError(f"Error converting gene targets: {e}") from e
+        logger.debug(f"  ✓ Converted in {time.time() - t0:.2f}s")
 
         # Create new column with converted targets (same length as original)
         adata.obs[self.target_column_name] = pd.Categorical(converted_targets)
 
         # Filter cells: keep only those with target_gene in mask or "non-targeting"
+        logger.debug("  Filtering cells by mask...")
+        t0 = time.time()
         target_col = adata.obs[self.target_column_name]
         assert isinstance(target_col, pd.Series)
         valid_mask = target_col.isin(mask_set | {"non-targeting"})
@@ -173,15 +191,20 @@ class EnsemblConversionConfig(FilterStepConfig):
         )
 
         adata = adata[valid_mask].copy()
+        logger.debug(f"  ✓ Filtered in {time.time() - t0:.2f}s")
+        logger.success(f"✅ Step 1 complete in {time.time() - step1_start:.2f}s")
 
         # ============================================================================
         # Step 2: Convert .var_names and add missing genes
         # ============================================================================
-        logger.info("Step 2: Converting .var_names to Ensembl IDs")
+        step2_start = time.time()
+        logger.info("📍 Step 2: Converting .var_names to Ensembl IDs")
 
         original_var_names = adata.var_names.tolist()
+        logger.debug(f"  Processing {len(original_var_names):,} gene names...")
 
         # Convert variable names (no filtering yet)
+        t0 = time.time()
         try:
             converted_var_names = convert_gene_labels(
                 labels=original_var_names,
@@ -190,13 +213,20 @@ class EnsemblConversionConfig(FilterStepConfig):
             )
         except ValueError as e:
             raise ValueError(f"Error converting variable names: {e}") from e
+        logger.debug(f"  ✓ Converted gene names in {time.time() - t0:.2f}s")
 
         # Filter to only keep genes in the mask
         # Create a boolean mask for which genes to keep
+        logger.debug("  Filtering genes by mask...")
+        t0 = time.time()
         genes_in_mask = [gene in mask_set for gene in converted_var_names]
+        logger.debug(f"  ✓ Created gene mask in {time.time() - t0:.2f}s")
 
         # Subset the AnnData to only keep genes in the mask
+        logger.debug(f"  Subsetting AnnData to {sum(genes_in_mask):,} genes...")
+        t0 = time.time()
         adata = adata[:, genes_in_mask].copy()
+        logger.debug(f"  ✓ Subsetted in {time.time() - t0:.2f}s")
 
         # Update var_names with the converted names
         adata.var_names = [
@@ -219,10 +249,13 @@ class EnsemblConversionConfig(FilterStepConfig):
             )
 
             # Sort missing genes for deterministic ordering
+            t0 = time.time()
             missing_genes_sorted = sorted(missing_genes)
+            logger.debug(f"  ✓ Sorted missing genes in {time.time() - t0:.2f}s")
 
             # Determine if data is sparse
             is_sparse = sp.issparse(adata.X)
+            logger.debug(f"  Data is {'sparse' if is_sparse else 'dense'}")
 
             # Create zero matrix for missing genes
             n_obs = adata.n_obs
@@ -232,20 +265,28 @@ class EnsemblConversionConfig(FilterStepConfig):
             assert adata.X is not None, "adata.X cannot be None"
             x_dtype = adata.X.dtype
 
+            logger.debug(f"  Creating zero matrix ({n_obs:,} × {n_missing:,})...")
+            t0 = time.time()
             if is_sparse:
                 # Create sparse zero matrix matching the format of existing data
                 zero_matrix = sp.csr_matrix((n_obs, n_missing), dtype=x_dtype)
             else:
                 # Create dense zero matrix
                 zero_matrix = np.zeros((n_obs, n_missing), dtype=x_dtype)
+            logger.debug(f"  ✓ Created zero matrix in {time.time() - t0:.2f}s")
 
             # Concatenate existing data with zeros
+            logger.debug("  Concatenating matrices...")
+            t0 = time.time()
             if is_sparse:
                 adata.X = sp.hstack([adata.X, zero_matrix], format="csr")
             else:
                 adata.X = np.hstack([adata.X, zero_matrix])
+            logger.debug(f"  ✓ Concatenated in {time.time() - t0:.2f}s")
 
             # Create var DataFrame for new genes
+            logger.debug("  Creating var DataFrame for new genes...")
+            t0 = time.time()
             new_var = pd.DataFrame(index=missing_genes_sorted)
 
             # Concatenate var DataFrames - cast to DataFrame for type checker
@@ -255,10 +296,14 @@ class EnsemblConversionConfig(FilterStepConfig):
 
             # Update var_names to include new genes
             adata.var_names = list(adata.var.index)
+            logger.debug(f"  ✓ Updated var in {time.time() - t0:.2f}s")
 
             logger.info(f"  Final gene count: {adata.n_vars:,}")
 
+        logger.success(f"✅ Step 2 complete in {time.time() - step2_start:.2f}s")
+
         # Verify that mask is satisfied
+        logger.debug("  Verifying mask satisfaction...")
         final_genes_set = set(adata.var_names)
         if not mask_set.issubset(final_genes_set):
             missing_after = mask_set - final_genes_set
@@ -268,6 +313,7 @@ class EnsemblConversionConfig(FilterStepConfig):
                 f"{list(missing_after)[:10]}"
                 f"{'...' if len(missing_after) > 10 else ''}",
             )
+        logger.debug("  ✓ All mask genes present")
 
         # ============================================================================
         # Calculate statistics
@@ -292,6 +338,10 @@ class EnsemblConversionConfig(FilterStepConfig):
             "n_cells_removed_step1": int(n_cells_removed_step1),
         }
 
-        logger.info("Ensembl conversion complete")
+        logger.success(
+            f"🎉 Ensembl conversion complete: "
+            f"{n_genes_initial:,} → {adata.n_vars:,} genes, "
+            f"{n_cells_initial:,} → {n_cells_after:,} cells"
+        )
 
         return adata, stats
