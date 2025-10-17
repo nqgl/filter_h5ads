@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Quick test to verify the configuration system works correctly.
+"""Quick test to verify the configuration system works correctly.
 Tests config creation, hashing, and serialization without requiring real data.
 """
 

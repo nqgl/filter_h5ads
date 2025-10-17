@@ -1,5 +1,4 @@
-"""
-I/O operations for loading, saving, and batch processing h5ad files.
+"""I/O operations for loading, saving, and batch processing h5ad files.
 
 Handles file operations with proper naming conventions based on config hashing.
 """
@@ -34,6 +33,7 @@ def load_h5ad(filepath: str | Path, backed: bool | None = None) -> AnnData:
     Raises:
         FileNotFoundError: If file doesn't exist
         ValueError: If file is not a valid h5ad
+
     """
     filepath = Path(filepath)
 
@@ -81,6 +81,7 @@ def save_filtered_h5ad(
 
     Returns:
         Path to the saved h5ad file
+
     """
     original_path = Path(original_path)
     config_hash = config.get_hash()
@@ -124,15 +125,19 @@ def batch_filter_h5ads(
     """Process multiple h5ad files with the same filtering pipeline.
 
     Args:
-        input_paths: List of paths to h5ad files, or a directory containing h5ad files
+        input_paths: List of paths to h5ad files, or a directory containing
+            h5ad files
         config: Pipeline configuration to apply to all files
         output_dir: Directory to save filtered outputs
-        skip_existing: Skip files that have already been processed (based on hash)
+        skip_existing: Skip files that have already been processed (based on
+            hash)
         compression: Compression method for h5ad files
-        backed: If True, load files in backed mode. If None, uses LOAD_AD_BACKED env var.
+        backed: If True, load files in backed mode. If None, uses
+            LOAD_AD_BACKED env var.
 
     Returns:
         List of dictionaries with results for each file processed
+
     """
     # Handle directory input
     if isinstance(input_paths, Path) and input_paths.is_dir():
@@ -170,7 +175,7 @@ def batch_filter_h5ads(
                     "output_path": str(expected_output),
                     "status": "skipped",
                     "reason": "already_exists",
-                }
+                },
             )
             continue
 
@@ -189,7 +194,7 @@ def batch_filter_h5ads(
                         "status": "failed",
                         "reason": "validation_error",
                         "errors": validation_errors,
-                    }
+                    },
                 )
                 continue
 
@@ -198,7 +203,11 @@ def batch_filter_h5ads(
 
             # Save results
             output_path = save_filtered_h5ad(
-                adata_filtered, input_path, config, output_dir=output_dir, compression=compression
+                adata_filtered,
+                input_path,
+                config,
+                output_dir=output_dir,
+                compression=compression,
             )
 
             # Record success
@@ -207,10 +216,12 @@ def batch_filter_h5ads(
                     "input_path": str(input_path),
                     "output_path": str(output_path),
                     "status": "success",
-                    "initial_cells": stats[0]["n_cells_before"] if stats else adata.n_obs,
+                    "initial_cells": stats[0]["n_cells_before"]
+                    if stats
+                    else adata.n_obs,
                     "final_cells": adata_filtered.n_obs,
                     "filter_stats": stats,
-                }
+                },
             )
 
             logger.info(f"✓ Successfully processed: {input_path.name}")
@@ -223,7 +234,7 @@ def batch_filter_h5ads(
                     "status": "failed",
                     "reason": "processing_error",
                     "error": str(e),
-                }
+                },
             )
 
     # Print summary
@@ -237,6 +248,7 @@ def _print_batch_summary(results: list[dict[str, Any]]) -> None:
 
     Args:
         results: List of result dictionaries from batch processing
+
     """
     print("\n" + "=" * 80)
     print("BATCH PROCESSING SUMMARY")
@@ -273,7 +285,9 @@ def _print_batch_summary(results: list[dict[str, Any]]) -> None:
     print("=" * 80)
 
 
-def list_filtered_files(directory: Path, original_name: str | None = None) -> list[Path]:
+def list_filtered_files(
+    directory: Path, original_name: str | None = None
+) -> list[Path]:
     """List all filtered h5ad files in a directory.
 
     Args:
@@ -282,6 +296,7 @@ def list_filtered_files(directory: Path, original_name: str | None = None) -> li
 
     Returns:
         List of paths to filtered h5ad files
+
     """
     directory = Path(directory)
 
@@ -303,6 +318,7 @@ def get_config_for_filtered_file(h5ad_path: Path) -> FilterPipelineConfig | None
 
     Returns:
         FilterPipelineConfig if config file exists, None otherwise
+
     """
     h5ad_path = Path(h5ad_path)
     config_path = h5ad_path.with_suffix(".json")

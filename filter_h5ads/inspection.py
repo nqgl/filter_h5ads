@@ -1,5 +1,4 @@
-"""
-Inspection and overview utilities for AnnData objects.
+"""Inspection and overview utilities for AnnData objects.
 
 Provides functions to display comprehensive information about h5ad files
 and filtering results.
@@ -32,16 +31,28 @@ class H5adSummary(BaseModel):
     obs_columns: dict[str, ColumnInfo] = Field(description="Cell metadata columns")
     var_columns: dict[str, ColumnInfo] = Field(description="Gene metadata columns")
     layers: list[str] = Field(default_factory=list, description="Layer names")
-    obsm_keys: list[str] = Field(default_factory=list, description="Cell embedding keys")
-    varm_keys: list[str] = Field(default_factory=list, description="Gene embedding keys")
-    obsp_keys: list[str] = Field(default_factory=list, description="Cell pairwise data keys")
-    varp_keys: list[str] = Field(default_factory=list, description="Gene pairwise data keys")
-    uns_keys: list[str] = Field(default_factory=list, description="Unstructured annotation keys")
+    obsm_keys: list[str] = Field(
+        default_factory=list, description="Cell embedding keys"
+    )
+    varm_keys: list[str] = Field(
+        default_factory=list, description="Gene embedding keys"
+    )
+    obsp_keys: list[str] = Field(
+        default_factory=list, description="Cell pairwise data keys"
+    )
+    varp_keys: list[str] = Field(
+        default_factory=list, description="Gene pairwise data keys"
+    )
+    uns_keys: list[str] = Field(
+        default_factory=list, description="Unstructured annotation keys"
+    )
     obsm_shapes: dict[str, tuple[int, ...]] = Field(
-        default_factory=dict, description="Shapes of obsm arrays"
+        default_factory=dict,
+        description="Shapes of obsm arrays",
     )
     varm_shapes: dict[str, tuple[int, ...]] = Field(
-        default_factory=dict, description="Shapes of varm arrays"
+        default_factory=dict,
+        description="Shapes of varm arrays",
     )
 
 
@@ -53,30 +64,37 @@ def get_h5ad_summary(adata: AnnData) -> H5adSummary:
 
     Returns:
         H5adSummary containing structured information
+
     """
     obs_columns = {}
     for col in adata.obs.columns:
+        col_series = adata.obs[col]
+        assert isinstance(col_series, pd.Series)
+
         stats = None
-        if pd.api.types.is_numeric_dtype(adata.obs[col]):
-            stats = get_numeric_summary(adata.obs[col])
+        if pd.api.types.is_numeric_dtype(col_series):
+            stats = get_numeric_summary(col_series)
 
         obs_columns[col] = ColumnInfo(
-            dtype=str(adata.obs[col].dtype),
-            n_unique=adata.obs[col].nunique(),
-            examples=get_unique_examples(adata.obs[col], n=5),
+            dtype=str(col_series.dtype),
+            n_unique=col_series.nunique(),
+            examples=get_unique_examples(col_series, n=5),
             stats=stats,
         )
 
     var_columns = {}
     for col in adata.var.columns:
+        col_series = adata.var[col]
+        assert isinstance(col_series, pd.Series)
+
         stats = None
-        if pd.api.types.is_numeric_dtype(adata.var[col]):
-            stats = get_numeric_summary(adata.var[col])
+        if pd.api.types.is_numeric_dtype(col_series):
+            stats = get_numeric_summary(col_series)
 
         var_columns[col] = ColumnInfo(
-            dtype=str(adata.var[col].dtype),
-            n_unique=adata.var[col].nunique(),
-            examples=get_unique_examples(adata.var[col], n=5),
+            dtype=str(col_series.dtype),
+            n_unique=col_series.nunique(),
+            examples=get_unique_examples(col_series, n=5),
             stats=stats,
         )
 
@@ -91,8 +109,12 @@ def get_h5ad_summary(adata: AnnData) -> H5adSummary:
         obsp_keys=list(adata.obsp.keys()) if adata.obsp else [],
         varp_keys=list(adata.varp.keys()) if adata.varp else [],
         uns_keys=list(adata.uns.keys()) if adata.uns else [],
-        obsm_shapes={key: adata.obsm[key].shape for key in adata.obsm.keys()} if adata.obsm else {},
-        varm_shapes={key: adata.varm[key].shape for key in adata.varm.keys()} if adata.varm else {},
+        obsm_shapes={key: adata.obsm[key].shape for key in adata.obsm.keys()}
+        if adata.obsm
+        else {},
+        varm_shapes={key: adata.varm[key].shape for key in adata.varm.keys()}
+        if adata.varm
+        else {},
     )
 
 
@@ -102,13 +124,17 @@ def print_h5ad_overview(adata: AnnData, n_examples: int = 5) -> None:
     Args:
         adata: AnnData object to inspect
         n_examples: Number of unique examples to show for each column
+
     """
     print("=" * 80)
     print("H5AD FILE OVERVIEW")
     print("=" * 80)
 
     # Dimensions
-    print(f"\nDimensions: {format_number(adata.n_obs)} cells × {format_number(adata.n_vars)} genes")
+    print(
+        f"\nDimensions: {format_number(adata.n_obs)} cells × "
+        f"{format_number(adata.n_vars)} genes"
+    )
 
     # Observations (cells) metadata
     print(f"\n{'─' * 80}")
@@ -117,17 +143,20 @@ def print_h5ad_overview(adata: AnnData, n_examples: int = 5) -> None:
     print(f"Number of columns: {len(adata.obs.columns)}\n")
 
     for col in adata.obs.columns:
-        dtype = adata.obs[col].dtype
-        n_unique = adata.obs[col].nunique()
+        col_series = adata.obs[col]
+        assert isinstance(col_series, pd.Series)
+
+        dtype = col_series.dtype
+        n_unique = col_series.nunique()
 
         print(f"  • {col}")
         print(f"    Type: {dtype} | Unique values: {format_number(n_unique)}")
 
         # Show examples
-        examples = get_unique_examples(adata.obs[col], n=n_examples)
-        if pd.api.types.is_numeric_dtype(adata.obs[col]):
+        examples = get_unique_examples(col_series, n=n_examples)
+        if pd.api.types.is_numeric_dtype(col_series):
             # For numeric columns, show statistics
-            stats = get_numeric_summary(adata.obs[col])
+            stats = get_numeric_summary(col_series)
             print(f"    Range: [{stats['min']:.2f}, {stats['max']:.2f}]")
             mean, median, std = stats["mean"], stats["median"], stats["std"]
             print(f"    Mean: {mean:.2f} | Median: {median:.2f} | Std: {std:.2f}")
@@ -147,17 +176,20 @@ def print_h5ad_overview(adata: AnnData, n_examples: int = 5) -> None:
     print(f"Number of columns: {len(adata.var.columns)}\n")
 
     for col in adata.var.columns:
-        dtype = adata.var[col].dtype
-        n_unique = adata.var[col].nunique()
+        col_series = adata.var[col]
+        assert isinstance(col_series, pd.Series)
+
+        dtype = col_series.dtype
+        n_unique = col_series.nunique()
 
         print(f"  • {col}")
         print(f"    Type: {dtype} | Unique values: {format_number(n_unique)}")
 
         # Show examples
-        examples = get_unique_examples(adata.var[col], n=n_examples)
-        if pd.api.types.is_numeric_dtype(adata.var[col]):
+        examples = get_unique_examples(col_series, n=n_examples)
+        if pd.api.types.is_numeric_dtype(col_series):
             # For numeric columns, show statistics
-            stats = get_numeric_summary(adata.var[col])
+            stats = get_numeric_summary(col_series)
             print(f"    Range: [{stats['min']:.2f}, {stats['max']:.2f}]")
             mean, median, std = stats["mean"], stats["median"], stats["std"]
             print(f"    Mean: {mean:.2f} | Median: {median:.2f} | Std: {std:.2f}")
@@ -235,6 +267,7 @@ def print_filtering_summary(stats_list: list[dict[str, Any]]) -> None:
 
     Args:
         stats_list: List of statistics dictionaries from each filter step
+
     """
     print("\n" + "=" * 80)
     print("FILTERING PIPELINE SUMMARY")
@@ -252,7 +285,10 @@ def print_filtering_summary(stats_list: list[dict[str, Any]]) -> None:
 
     print(f"\nInitial cells: {format_number(initial_cells)}")
     print(f"Final cells:   {format_number(final_cells)}")
-    print(f"Removed:       {format_number(total_removed)} ({100 - total_pct_retained:.1f}%)")
+    print(
+        f"Removed:       {format_number(total_removed)} "
+        f"({100 - total_pct_retained:.1f}%)"
+    )
     print(f"Retained:      {total_pct_retained:.1f}%")
 
     # Individual filter steps
@@ -270,12 +306,14 @@ def print_filtering_summary(stats_list: list[dict[str, Any]]) -> None:
         print(f"  Retained: {stats['pct_retained']:.1f}%")
 
         # Show breakdown by gene target if available
-        if "breakdown_after" in stats and stats["breakdown_after"]:
+        if stats.get("breakdown_after"):
             print("\n  Breakdown by gene_target:")
             breakdown = stats["breakdown_after"]
 
             # Sort by count (descending)
-            sorted_breakdown = sorted(breakdown.items(), key=lambda x: x[1], reverse=True)
+            sorted_breakdown = sorted(
+                breakdown.items(), key=lambda x: x[1], reverse=True
+            )
 
             # Show top targets
             for target, count in sorted_breakdown[:10]:

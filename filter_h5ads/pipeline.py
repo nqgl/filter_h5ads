@@ -1,5 +1,4 @@
-"""
-Pipeline orchestration for running multiple filters in sequence.
+"""Pipeline orchestration for running multiple filters in sequence.
 
 Provides functions to execute a complete filtering pipeline and track
 provenance information.
@@ -17,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 def run_pipeline(
-    adata: AnnData, config: FilterPipelineConfig
+    adata: AnnData,
+    config: FilterPipelineConfig,
 ) -> tuple[AnnData, list[dict[str, Any]]]:
     """Execute complete filtering pipeline on an AnnData object.
 
@@ -35,6 +35,7 @@ def run_pipeline(
 
     Returns:
         Tuple of (filtered AnnData, list of statistics from each step)
+
     """
     logger.info(f"Starting pipeline: {config.pipeline_name}")
     logger.info(f"Initial cell count: {adata.n_obs:,}")
@@ -63,19 +64,23 @@ def run_pipeline(
         # Log progress
         logger.info(
             f"  → {stats['n_cells_after']:,} cells remaining "
-            f"({stats['pct_retained']:.1f}% retained)"
+            f"({stats['pct_retained']:.1f}% retained)",
         )
 
     # Add provenance information
     adata_final = add_provenance(adata_current, config, all_stats)
 
-    logger.info(f"Pipeline complete: {adata_final.n_obs:,} / {adata.n_obs:,} cells retained")
+    logger.info(
+        f"Pipeline complete: {adata_final.n_obs:,} / {adata.n_obs:,} cells retained"
+    )
 
     return adata_final, all_stats
 
 
 def add_provenance(
-    adata: AnnData, config: FilterPipelineConfig, stats: list[dict[str, Any]]
+    adata: AnnData,
+    config: FilterPipelineConfig,
+    stats: list[dict[str, Any]],
 ) -> AnnData:
     """Add filtering provenance information to AnnData.uns.
 
@@ -89,6 +94,7 @@ def add_provenance(
 
     Returns:
         AnnData object with provenance added to .uns
+
     """
     provenance: dict[str, Any] = {
         "pipeline_name": config.pipeline_name,
@@ -125,6 +131,7 @@ def get_pipeline_summary(adata: AnnData) -> dict[str, Any] | None:
 
     Returns:
         Most recent provenance dictionary, or None if no provenance exists
+
     """
     if "filtering_provenance" not in adata.uns:
         return None
@@ -133,7 +140,7 @@ def get_pipeline_summary(adata: AnnData) -> dict[str, Any] | None:
 
     if isinstance(provenance, list) and len(provenance) > 0:
         return provenance[-1]  # Return most recent
-    elif isinstance(provenance, dict):
+    if isinstance(provenance, dict):
         return provenance
 
     return None
@@ -150,6 +157,7 @@ def validate_pipeline_config(config: FilterPipelineConfig, adata: AnnData) -> li
 
     Returns:
         List of validation error messages (empty if valid)
+
     """
     errors: list[str] = []
     obs_columns = set(adata.obs.columns)

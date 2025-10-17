@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-"""
-Complete filtering pipeline example with all steps.
+"""Complete filtering pipeline example with all steps.
 
 This example demonstrates a full CRISPR screen filtering pipeline including:
 1. Ensembl ID conversion (preprocessing)
@@ -32,7 +30,6 @@ from filter_h5ads.mask import mask
 
 def main():
     """Run complete filtering pipeline on a CRISPR screen h5ad file."""
-
     # ==========================================================================
     # Configuration
     # ==========================================================================
@@ -143,8 +140,7 @@ def main():
 
 
 def create_config_without_ensembl_conversion():
-    """
-    Alternative configuration without Ensembl conversion.
+    """Alternative configuration without Ensembl conversion.
 
     Use this if your data already has Ensembl IDs or you want to skip
     the gene name conversion step.
@@ -162,8 +158,7 @@ def create_config_without_ensembl_conversion():
 
 
 def create_lenient_config():
-    """
-    Alternative configuration with more lenient thresholds.
+    """Alternative configuration with more lenient thresholds.
 
     Use this for datasets with lower quality or when you want to retain
     more cells for downstream analysis.
@@ -198,8 +193,7 @@ def create_lenient_config():
 
 
 def create_strict_config():
-    """
-    Alternative configuration with stricter thresholds.
+    """Alternative configuration with stricter thresholds.
 
     Use this when you want higher quality cells and can afford to
     filter out more data.
@@ -234,8 +228,7 @@ def create_strict_config():
 
 
 def selective_filtering_example():
-    """
-    Example with selective filtering - only some steps enabled.
+    """Example with selective filtering - only some steps enabled.
 
     This shows how to enable/disable specific filtering steps.
     """

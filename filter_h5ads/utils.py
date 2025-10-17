@@ -1,6 +1,4 @@
-"""
-Utility functions for validation, logging, and helper operations.
-"""
+"""Utility functions for validation, logging, and helper operations."""
 
 import logging
 from typing import Any
@@ -14,6 +12,7 @@ def setup_logging(level: str = "INFO") -> None:
 
     Args:
         level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+
     """
     logging.basicConfig(
         level=getattr(logging, level.upper()),
@@ -22,7 +21,9 @@ def setup_logging(level: str = "INFO") -> None:
     )
 
 
-def validate_h5ad_columns(adata: AnnData, required_cols: list[str], location: str = "obs") -> None:
+def validate_h5ad_columns(
+    adata: AnnData, required_cols: list[str], location: str = "obs"
+) -> None:
     """Validate that required columns exist in AnnData object.
 
     Args:
@@ -32,6 +33,7 @@ def validate_h5ad_columns(adata: AnnData, required_cols: list[str], location: st
 
     Raises:
         ValueError: If any required columns are missing
+
     """
     if location == "obs":
         available_cols = set(adata.obs.columns)
@@ -47,11 +49,13 @@ def validate_h5ad_columns(adata: AnnData, required_cols: list[str], location: st
     if missing_cols:
         raise ValueError(
             f"Missing required columns in {data_type}: {missing_cols}\n"
-            f"Available columns: {sorted(available_cols)}"
+            f"Available columns: {sorted(available_cols)}",
         )
 
 
-def get_column_breakdown(adata: AnnData, groupby_col: str = "gene_target") -> dict[str, int]:
+def get_column_breakdown(
+    adata: AnnData, groupby_col: str = "gene_target"
+) -> dict[str, int]:
     """Get cell count breakdown by a grouping column.
 
     Args:
@@ -60,16 +64,22 @@ def get_column_breakdown(adata: AnnData, groupby_col: str = "gene_target") -> di
 
     Returns:
         Dictionary mapping group values to cell counts
+
     """
     if groupby_col not in adata.obs.columns:
         return {}
 
-    value_counts = adata.obs[groupby_col].value_counts()
+    col_series = adata.obs[groupby_col]
+    assert isinstance(col_series, pd.Series)
+    value_counts = col_series.value_counts()
     return value_counts.to_dict()
 
 
 def calculate_filter_stats(
-    adata_before: AnnData, adata_after: AnnData, filter_name: str, groupby_col: str = "gene_target"
+    adata_before: AnnData,
+    adata_after: AnnData,
+    filter_name: str,
+    groupby_col: str = "gene_target",
 ) -> dict[str, Any]:
     """Calculate comprehensive statistics for a filtering step.
 
@@ -81,6 +91,7 @@ def calculate_filter_stats(
 
     Returns:
         Dictionary with filtering statistics
+
     """
     n_before = adata_before.n_obs
     n_after = adata_after.n_obs
@@ -120,6 +131,7 @@ def safe_copy(adata: AnnData) -> AnnData:
 
     Returns:
         Copy of the AnnData object
+
     """
     return adata.copy()
 
@@ -132,6 +144,7 @@ def get_numeric_summary(series: pd.Series) -> dict[str, float]:
 
     Returns:
         Dictionary with min, max, mean, median, std
+
     """
     return {
         "min": float(series.min()),
@@ -142,7 +155,7 @@ def get_numeric_summary(series: pd.Series) -> dict[str, float]:
     }
 
 
-def format_number(num: int | float) -> str:
+def format_number(num: float) -> str:
     """Format large numbers with thousand separators.
 
     Args:
@@ -150,6 +163,7 @@ def format_number(num: int | float) -> str:
 
     Returns:
         Formatted string
+
     """
     if isinstance(num, float):
         return f"{num:,.2f}"
@@ -165,6 +179,7 @@ def get_unique_examples(series: pd.Series, n: int = 5) -> list[Any]:
 
     Returns:
         List of unique values
+
     """
     unique_vals = series.unique()
     if len(unique_vals) > n:

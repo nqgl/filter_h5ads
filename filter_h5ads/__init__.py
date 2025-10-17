@@ -1,5 +1,4 @@
-"""
-filter_h5ads: A robust pipeline for filtering h5ad files from CRISPR screens.
+"""filter_h5ads: A robust pipeline for filtering h5ad files from CRISPR screens.
 
 This package provides a configurable, type-safe filtering pipeline for AnnData objects,
 with particular focus on CRISPR perturbation screen quality control.
@@ -26,23 +25,8 @@ from filter_h5ads.config import (
 from filter_h5ads.config import (
     UMIFilterConfig as UMIFilterConfig,
 )
-from filter_h5ads.conversions import (
-    apply_ensembl_conversion as apply_ensembl_conversion,
-)
-from filter_h5ads.conversions import (
+from filter_h5ads.filters.ensembl_conversion import (
     convert_gene_labels as convert_gene_labels,
-)
-from filter_h5ads.filters import (
-    apply_gene_filter as apply_gene_filter,
-)
-from filter_h5ads.filters import (
-    apply_guide_filter as apply_guide_filter,
-)
-from filter_h5ads.filters import (
-    apply_mito_filter as apply_mito_filter,
-)
-from filter_h5ads.filters import (
-    apply_umi_filter as apply_umi_filter,
 )
 from filter_h5ads.inspection import (
     ColumnInfo as ColumnInfo,

@@ -1,6 +1,4 @@
-"""
-Command-line interface for filter_h5ads package.
-"""
+"""Command-line interface for filter_h5ads package."""
 
 import sys
 from pathlib import Path
@@ -15,11 +13,12 @@ from filter_h5ads.io import load_h5ad
 @click.version_option(version="0.1.0")
 def cli():
     """filter_h5ads: Filter and inspect h5ad files from CRISPR screens."""
-    pass
 
 
 @cli.command()
-@click.argument("h5ad_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.argument(
+    "h5ad_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
 @click.option(
     "--n-examples",
     "-n",
@@ -50,8 +49,12 @@ def inspect(h5ad_path: Path, n_examples: int, backed: bool):
 
 
 @cli.command()
-@click.argument("h5ad_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
-@click.argument("config_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.argument(
+    "h5ad_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@click.argument(
+    "config_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
 @click.option(
     "--output-dir",
     "-o",
@@ -63,7 +66,9 @@ def inspect(h5ad_path: Path, n_examples: int, backed: bool):
     is_flag=True,
     help="Load h5ad file in backed mode (memory efficient)",
 )
-def filter_h5ad(h5ad_path: Path, config_path: Path, output_dir: Path | None, backed: bool):
+def filter_h5ad(
+    h5ad_path: Path, config_path: Path, output_dir: Path | None, backed: bool
+):
     """Filter an h5ad file using a configuration file.
 
     \b
@@ -103,7 +108,10 @@ def filter_h5ad(h5ad_path: Path, config_path: Path, output_dir: Path | None, bac
 
         # Save results
         output_path = save_filtered_h5ad(
-            adata_filtered, original_path=h5ad_path, config=config, output_dir=output_dir
+            adata_filtered,
+            original_path=h5ad_path,
+            config=config,
+            output_dir=output_dir,
         )
 
         click.echo(f"\n✓ Filtered data saved to: {output_path}")
@@ -115,8 +123,12 @@ def filter_h5ad(h5ad_path: Path, config_path: Path, output_dir: Path | None, bac
 
 
 @cli.command()
-@click.argument("input_dir", type=click.Path(exists=True, file_okay=False, path_type=Path))
-@click.argument("config_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.argument(
+    "input_dir", type=click.Path(exists=True, file_okay=False, path_type=Path)
+)
+@click.argument(
+    "config_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
 @click.option(
     "--output-dir",
     "-o",
@@ -134,7 +146,13 @@ def filter_h5ad(h5ad_path: Path, config_path: Path, output_dir: Path | None, bac
     is_flag=True,
     help="Load h5ad files in backed mode (memory efficient)",
 )
-def batch(input_dir: Path, config_path: Path, output_dir: Path, skip_existing: bool, backed: bool):
+def batch(
+    input_dir: Path,
+    config_path: Path,
+    output_dir: Path,
+    skip_existing: bool,
+    backed: bool,
+):
     """Batch filter multiple h5ad files in a directory.
 
     \b

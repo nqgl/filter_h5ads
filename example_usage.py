@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Example usage of the filter_h5ads package.
+"""Example usage of the filter_h5ads package.
 
 Demonstrates how to:
 1. Load and inspect an h5ad file
@@ -49,13 +48,17 @@ def example_single_file():
     config = FilterPipelineConfig(
         pipeline_name="standard_crispr_qc",
         umi_filter=UMIFilterConfig(min_counts=15000, count_column="total_counts"),
-        guide_filter=GuideFilterConfig(guide_column="pass_guide_filter", required_value=1),
+        guide_filter=GuideFilterConfig(
+            guide_column="pass_guide_filter", required_value=1
+        ),
         mito_filter=MitochondrialFilterConfig(
             max_pct_mt=20.0,
             mt_column="pct_counts_mt",
             enabled=True,  # Can disable individual filters
         ),
-        gene_filter=GeneDetectionFilterConfig(min_genes=200, gene_column="n_genes_by_counts"),
+        gene_filter=GeneDetectionFilterConfig(
+            min_genes=200, gene_column="n_genes_by_counts"
+        ),
     )
 
     print(f"\nPipeline configuration hash: {config.get_hash()}")
@@ -68,7 +71,10 @@ def example_single_file():
 
     # Save the filtered data
     output_path = save_filtered_h5ad(
-        adata_filtered, original_path=input_path, config=config, output_dir=Path("output")
+        adata_filtered,
+        original_path=input_path,
+        config=config,
+        output_dir=Path("output"),
     )
 
     print(f"\nFiltered data saved to: {output_path}")
@@ -87,7 +93,9 @@ def example_batch_processing():
             min_counts=10000,  # Lower threshold
             count_column="total_counts",
         ),
-        guide_filter=GuideFilterConfig(guide_column="pass_guide_filter", required_value=1),
+        guide_filter=GuideFilterConfig(
+            guide_column="pass_guide_filter", required_value=1
+        ),
         # Skip mito filter by not including it
         gene_filter=GeneDetectionFilterConfig(
             min_genes=150,  # Lower threshold
