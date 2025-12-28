@@ -47,7 +47,7 @@ def main():
         # Converts gene names to Ensembl IDs and filters by allowed genes
         ensembl_conversion=EnsemblConversionConfig(
             gene_remapping_ref=SafeGeneSymbolRemappingRef.get_default_for_vcc(),
-            mask_getter=lambda: mask,  # Your allowed gene set
+            mask=mask,  # Your allowed gene set
             source_target_column="gene_target",  # Source column with gene targets
             target_column_name="target_gene",  # New column with Ensembl IDs
             enabled=True,

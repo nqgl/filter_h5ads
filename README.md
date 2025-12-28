@@ -1,3 +1,8 @@
+quick filtering pipeline written with extensive agent usage.
+
+The remainder of the readme is agent-written, not necessarily endorsed.
+
+
 # filter_h5ads
 
 A robust, type-safe pipeline for filtering h5ad files from CRISPR perturbation screens.

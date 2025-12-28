@@ -15,6 +15,7 @@ from comlm.config.data_configs import SafeGeneSymbolRemappingRef
 from loguru import logger
 from pydantic import ConfigDict, Field
 
+from filter_h5ads import mask
 from filter_h5ads.filters.base import FilterStepConfig
 
 
@@ -73,11 +74,9 @@ class EnsemblConversionConfig(FilterStepConfig):
     Converts gene names to Ensembl IDs for both target genes and variable names.
     """
 
+    mask: list[str]
     gene_remapping_ref: SafeGeneSymbolRemappingRef = Field(
         description="SafeGeneSymbolRemappingRef for gene name to Ensembl ID mapping",
-    )
-    mask_getter: Any = Field(
-        description="Callable that returns list/set of allowed Ensembl IDs"
     )
     source_target_column: str = Field(
         default="gene_target",
@@ -89,6 +88,9 @@ class EnsemblConversionConfig(FilterStepConfig):
     )
 
     model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
+
+    def mask_getter(self) -> list[str]:
+        return mask.mask
 
     def apply(self, adata: AnnData) -> tuple[AnnData, dict[str, Any]]:
         """Apply Ensembl ID conversion to both target genes and variable names.
@@ -275,28 +277,20 @@ class EnsemblConversionConfig(FilterStepConfig):
                 zero_matrix = np.zeros((n_obs, n_missing), dtype=x_dtype)
             logger.debug(f"  ✓ Created zero matrix in {time.time() - t0:.2f}s")
 
-            # Concatenate existing data with zeros
-            logger.debug("  Concatenating matrices...")
-            t0 = time.time()
-            if is_sparse:
-                adata.X = sp.hstack([adata.X, zero_matrix], format="csr")
-            else:
-                adata.X = np.hstack([adata.X, zero_matrix])
-            logger.debug(f"  ✓ Concatenated in {time.time() - t0:.2f}s")
-
-            # Create var DataFrame for new genes
-            logger.debug("  Creating var DataFrame for new genes...")
+            # Create AnnData for missing genes
+            logger.debug("  Creating AnnData for missing genes...")
             t0 = time.time()
             new_var = pd.DataFrame(index=missing_genes_sorted)
+            adata_missing = AnnData(X=zero_matrix, obs=adata.obs, var=new_var)
+            logger.debug(f"  ✓ Created in {time.time() - t0:.2f}s")
 
-            # Concatenate var DataFrames - cast to DataFrame for type checker
-            var_df = adata.var
-            assert isinstance(var_df, pd.DataFrame)
-            adata.var = pd.concat([var_df, new_var], axis=0)
+            # Concatenate along gene axis using modern API
+            logger.debug("  Concatenating AnnData objects...")
+            t0 = time.time()
+            from anndata import concat  # noqa: PLC0415
 
-            # Update var_names to include new genes
-            adata.var_names = list(adata.var.index)
-            logger.debug(f"  ✓ Updated var in {time.time() - t0:.2f}s")
+            adata = concat([adata, adata_missing], axis=1, join="outer", merge="first")
+            logger.debug(f"  ✓ Concatenated in {time.time() - t0:.2f}s")
 
             logger.info(f"  Final gene count: {adata.n_vars:,}")
 

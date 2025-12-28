@@ -81,7 +81,7 @@ def run_pipeline(
 
     # Add provenance information
     logger.info("\n📝 Adding provenance information...")
-    adata_final = add_provenance(adata_current, config, all_stats)
+    adata_current.uns["filtering_provenance"] = config.model_dump_json()
 
     pipeline_time = time.time() - pipeline_start
 
@@ -91,57 +91,11 @@ def run_pipeline(
     )
     logger.success(f"{'=' * 60}")
     logger.info(
-        f"📊 Final result: {adata_final.n_obs:,} / {adata.n_obs:,} cells retained "
-        f"({adata_final.n_obs / adata.n_obs * 100:.1f}%)"
+        f"📊 Final result: {adata_current.n_obs:,} / {adata.n_obs:,} cells retained "
+        f"({adata_current.n_obs / adata.n_obs * 100:.1f}%)"
     )
 
-    return adata_final, all_stats
-
-
-def add_provenance(
-    adata: AnnData,
-    config: FilterPipelineConfig,
-    stats: list[dict[str, Any]],
-) -> AnnData:
-    """Add filtering provenance information to AnnData.uns.
-
-    Stores complete information about the filtering pipeline, including
-    configuration, statistics, and timestamp.
-
-    Args:
-        adata: AnnData object to annotate
-        config: Pipeline configuration that was applied
-        stats: List of statistics from each filter step
-
-    Returns:
-        AnnData object with provenance added to .uns
-
-    """
-    provenance: dict[str, Any] = {
-        "pipeline_name": config.pipeline_name,
-        "pipeline_hash": config.get_hash(),
-        "timestamp": datetime.now().isoformat(),
-        "config": config.model_dump(),
-        "filter_stats": stats,
-        "initial_cells": stats[0]["n_cells_before"] if stats else adata.n_obs,
-        "final_cells": adata.n_obs,
-        "total_removed": (stats[0]["n_cells_before"] - adata.n_obs) if stats else 0,
-    }
-
-    # Store in uns
-    if "filtering_provenance" not in adata.uns:
-        adata.uns["filtering_provenance"] = []
-
-    # Add this pipeline run to the provenance list
-    if isinstance(adata.uns["filtering_provenance"], list):
-        adata.uns["filtering_provenance"].append(provenance)
-    else:
-        # Handle case where uns["filtering_provenance"] exists but isn't a list
-        adata.uns["filtering_provenance"] = [provenance]
-
-    logger.info("Added provenance information to adata.uns['filtering_provenance']")
-
-    return adata
+    return adata_current, all_stats
 
 
 def get_pipeline_summary(adata: AnnData) -> dict[str, Any] | None:

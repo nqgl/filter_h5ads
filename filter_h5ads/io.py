@@ -62,7 +62,7 @@ def save_filtered_h5ad(
     original_path: Path,
     config: FilterPipelineConfig,
     output_dir: Path | None = None,
-    compression: str = "gzip",
+    compression: str | None = None,
 ) -> Path:
     """Save filtered h5ad file with deterministic naming based on config hash.
 

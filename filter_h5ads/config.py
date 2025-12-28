@@ -59,8 +59,7 @@ class FilterPipelineConfig(BaseModel):
 
         """
         # Convert to dict, then to sorted JSON for deterministic hashing
-        config_dict = self.model_dump()
-        config_json = json.dumps(config_dict, sort_keys=True, indent=None)
+        config_json = self.model_dump_json()
         hash_obj = hashlib.sha256(config_json.encode("utf-8"))
         return hash_obj.hexdigest()[:8]
 

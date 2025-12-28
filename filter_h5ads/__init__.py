@@ -53,9 +53,6 @@ from filter_h5ads.io import (
     save_filtered_h5ad as save_filtered_h5ad,
 )
 from filter_h5ads.pipeline import (
-    add_provenance as add_provenance,
-)
-from filter_h5ads.pipeline import (
     run_pipeline as run_pipeline,
 )
 
