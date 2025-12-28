@@ -79,6 +79,7 @@ from filter_h5ads import (
     print_h5ad_overview,
     FilterPipelineConfig,
     GeneDetectionFilterConfig,
+    ObsColumnTransformConfig,
     UMIFilterConfig,
     GuideFilterConfig,
     MitochondrialFilterConfig,
@@ -94,6 +95,16 @@ print_h5ad_overview(adata)
 # Configure pipeline
 config = FilterPipelineConfig(
     pipeline_name="standard_crispr_qc",
+    obs_column_transform=ObsColumnTransformConfig(
+        input_columns=["drugname_drugconc"],
+        operations=[
+            {"op": "parse_python_literal"},
+            {"op": "first"},
+            {"op": "pick_indices", "indices": [1, 2]},
+            {"op": "join", "sep": " "},
+        ],
+        output_column="dose",
+    ),
     obs_value_filter=ObsValueFilterConfig(key="cell-type", values=["doublet"], exclude=True),
     umi_filter=UMIFilterConfig(min_counts=15000),
     guide_filter=GuideFilterConfig(guide_column='pass_guide_filter'),
@@ -110,7 +121,7 @@ output_path = save_filtered_h5ad(adata_filtered, Path("data.h5ad"), config)
 
 ## Pipeline Configuration
 
-Each filter can be independently configured and enabled/disabled. The pipeline executes in order: **Ensembl Conversion** → **Obs Value** → UMI → Guide → Mito → Gene.
+Each filter can be independently configured and enabled/disabled. The pipeline executes in order: **Ensembl Conversion** → **Obs Column Transform** → **Obs Value** → UMI → Guide → Mito → Gene.
 
 ### Ensembl ID Conversion (Preprocessing)
 ```python
@@ -139,6 +150,22 @@ ObsValueFilterConfig(
     values=["doublet", "low_qc"],     # Values to match against
     exclude=True,                    # True=drop matches, False=keep only matches
     enabled=True,
+)
+```
+
+### Obs Column Transform (derive new metadata)
+```python
+ObsColumnTransformConfig(
+    input_columns=["drugname_drugconc"],
+    operations=[
+        {"op": "parse_python_literal"},            # if values are stored as strings
+        {"op": "first"},                           # [('Drug', 5.0, 'uM')] -> ('Drug', 5.0, 'uM')
+        {"op": "pick_indices", "indices": [1, 2]}, # -> (5.0, 'uM')
+        {"op": "join", "sep": " "},                # -> "5.0 uM"
+    ],
+    output_column="dose",
+    overwrite=False,
+    on_error="raise",
 )
 ```
 
