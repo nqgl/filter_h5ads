@@ -20,11 +20,13 @@ def run_pipeline(
 ) -> tuple[AnnData, list[dict[str, Any]]]:
     """Execute complete filtering pipeline on an AnnData object.
 
-    The pipeline applies filters in the following order:
-    1. UMI count filter
-    2. Guide quality filter
-    3. Mitochondrial content filter
-    4. Gene detection filter
+    The pipeline applies enabled steps in the following order:
+    1. Ensembl conversion (preprocessing)
+    2. Obs value filter (include/exclude values)
+    3. UMI count filter
+    4. Guide quality filter
+    5. Mitochondrial content filter
+    6. Gene detection filter
 
     Only enabled filters are applied.
 
@@ -159,6 +161,11 @@ def validate_pipeline_config(config: FilterPipelineConfig, adata: AnnData) -> li
 
         if hasattr(filter_config, "gene_column"):
             col = filter_config.gene_column
+            if col not in obs_columns:
+                errors.append(f"{filter_name}: Missing column '{col}' in .obs")
+
+        if hasattr(filter_config, "key"):
+            col = filter_config.key
             if col not in obs_columns:
                 errors.append(f"{filter_name}: Missing column '{col}' in .obs")
 

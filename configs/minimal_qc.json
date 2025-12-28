@@ -1,5 +1,6 @@
 {
   "pipeline_name": "minimal_qc",
+  "obs_value_filter": null,
   "umi_filter": {
     "enabled": true,
     "min_counts": 15000,
