@@ -12,6 +12,7 @@ A robust, type-safe pipeline for filtering h5ad files from CRISPR perturbation s
 - **Immutable Configuration**: Pydantic-based configs ensure reproducibility
 - **Deterministic Naming**: Config hashing creates unique, traceable output files
 - **Comprehensive Filtering**: UMI counts, guide quality, mitochondrial content, gene detection
+- **Metadata Filtering**: Include/exclude cells by `.obs` values (e.g., cell type)
 - **Rich Inspection**: Detailed overview of h5ad file contents
 - **Batch Processing**: Process multiple files with the same pipeline
 - **Full Provenance**: Filtering metadata stored in output files
@@ -77,8 +78,11 @@ from filter_h5ads import (
     load_h5ad,
     print_h5ad_overview,
     FilterPipelineConfig,
+    GeneDetectionFilterConfig,
     UMIFilterConfig,
     GuideFilterConfig,
+    MitochondrialFilterConfig,
+    ObsValueFilterConfig,
     run_pipeline,
     save_filtered_h5ad,
 )
@@ -90,6 +94,7 @@ print_h5ad_overview(adata)
 # Configure pipeline
 config = FilterPipelineConfig(
     pipeline_name="standard_crispr_qc",
+    obs_value_filter=ObsValueFilterConfig(key="cell-type", values=["doublet"], exclude=True),
     umi_filter=UMIFilterConfig(min_counts=15000),
     guide_filter=GuideFilterConfig(guide_column='pass_guide_filter'),
     mito_filter=MitochondrialFilterConfig(max_pct_mt=20.0),
@@ -105,7 +110,7 @@ output_path = save_filtered_h5ad(adata_filtered, Path("data.h5ad"), config)
 
 ## Pipeline Configuration
 
-Each filter can be independently configured and enabled/disabled. The pipeline executes in order: **Ensembl Conversion** → UMI → Guide → Mito → Gene.
+Each filter can be independently configured and enabled/disabled. The pipeline executes in order: **Ensembl Conversion** → **Obs Value** → UMI → Guide → Mito → Gene.
 
 ### Ensembl ID Conversion (Preprocessing)
 ```python
@@ -126,6 +131,16 @@ This step:
 3. Converts `.var_names` to Ensembl IDs
 4. Adds zero columns for missing genes in the mask
 5. Ensures all genes in mask are present in the data
+
+### Obs Value Filter (e.g., Cell Type)
+```python
+ObsValueFilterConfig(
+    key="cell-type",                 # Column name in .obs
+    values=["doublet", "low_qc"],     # Values to match against
+    exclude=True,                    # True=drop matches, False=keep only matches
+    enabled=True,
+)
+```
 
 ### UMI Count Filter
 ```python

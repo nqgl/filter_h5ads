@@ -8,6 +8,7 @@ from filter_h5ads import (
     GeneDetectionFilterConfig,
     GuideFilterConfig,
     MitochondrialFilterConfig,
+    ObsValueFilterConfig,
     UMIFilterConfig,
 )
 
@@ -19,6 +20,11 @@ def test_config_creation():
     # Create a complete pipeline config
     config = FilterPipelineConfig(
         pipeline_name="test_pipeline",
+        obs_value_filter=ObsValueFilterConfig(
+            key="cell-type",
+            values=["doublet"],
+            exclude=True,
+        ),
         umi_filter=UMIFilterConfig(min_counts=15000),
         guide_filter=GuideFilterConfig(guide_column="pass_guide_filter"),
         mito_filter=MitochondrialFilterConfig(max_pct_mt=20.0),
@@ -156,6 +162,18 @@ def test_validation():
         print("✓ Allows min_counts=0")
     except Exception:
         print("✗ Should allow min_counts=0")
+
+    # Test alias support for "exclue" (common misspelling)
+    try:
+        cfg = ObsValueFilterConfig.model_validate(
+            {"key": "cell-type", "values": ["doublet"], "exclue": True}
+        )
+        if cfg.exclude is True:
+            print("✓ Accepts 'exclue' as alias for 'exclude'")
+        else:
+            print("✗ 'exclue' alias did not set exclude=True")
+    except Exception:
+        print("✗ Should accept 'exclue' as alias for 'exclude'")
 
 
 if __name__ == "__main__":

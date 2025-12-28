@@ -23,6 +23,9 @@ from filter_h5ads.config import (
     MitochondrialFilterConfig as MitochondrialFilterConfig,
 )
 from filter_h5ads.config import (
+    ObsValueFilterConfig as ObsValueFilterConfig,
+)
+from filter_h5ads.config import (
     UMIFilterConfig as UMIFilterConfig,
 )
 from filter_h5ads.filters.ensembl_conversion import (

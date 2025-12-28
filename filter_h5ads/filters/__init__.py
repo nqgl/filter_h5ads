@@ -14,4 +14,7 @@ from filter_h5ads.filters.guide_filter import GuideFilterConfig as GuideFilterCo
 from filter_h5ads.filters.mitochondrial import (
     MitochondrialFilterConfig as MitochondrialFilterConfig,
 )
+from filter_h5ads.filters.obs_value_filter import (
+    ObsValueFilterConfig as ObsValueFilterConfig,
+)
 from filter_h5ads.filters.umi_filter import UMIFilterConfig as UMIFilterConfig
