@@ -8,6 +8,7 @@ from filter_h5ads import (
     GeneDetectionFilterConfig,
     GuideFilterConfig,
     MitochondrialFilterConfig,
+    ObsColumnTransformConfig,
     ObsValueFilterConfig,
     UMIFilterConfig,
 )
@@ -20,6 +21,16 @@ def test_config_creation():
     # Create a complete pipeline config
     config = FilterPipelineConfig(
         pipeline_name="test_pipeline",
+        obs_column_transform=ObsColumnTransformConfig(
+            input_columns=["drugname_drugconc"],
+            operations=[
+                {"op": "parse_python_literal"},
+                {"op": "first"},
+                {"op": "pick_indices", "indices": [1, 2]},
+                {"op": "join", "sep": " "},
+            ],
+            output_column="dose",
+        ),
         obs_value_filter=ObsValueFilterConfig(
             key="cell-type",
             values=["doublet"],
@@ -90,6 +101,16 @@ def test_config_serialization():
 
     config = FilterPipelineConfig(
         pipeline_name="serialize_test",
+        obs_column_transform=ObsColumnTransformConfig(
+            input_columns=["drugname_drugconc"],
+            operations=[
+                {"op": "parse_python_literal"},
+                {"op": "first"},
+                {"op": "pick_indices", "indices": [1, 2]},
+                {"op": "join", "sep": " "},
+            ],
+            output_column="dose",
+        ),
         umi_filter=UMIFilterConfig(min_counts=15000),
         guide_filter=GuideFilterConfig(guide_column="pass_guide_filter"),
     )
@@ -117,6 +138,17 @@ def test_enabled_filters():
 
     config = FilterPipelineConfig(
         pipeline_name="partial_pipeline",
+        obs_column_transform=ObsColumnTransformConfig(
+            input_columns=["drugname_drugconc"],
+            operations=[
+                {"op": "parse_python_literal"},
+                {"op": "first"},
+                {"op": "pick_indices", "indices": [1, 2]},
+                {"op": "join", "sep": " "},
+            ],
+            output_column="dose",
+            enabled=False,
+        ),
         umi_filter=UMIFilterConfig(min_counts=15000),
         guide_filter=GuideFilterConfig(guide_column="pass_guide_filter", enabled=False),
         mito_filter=None,  # Not included at all
@@ -176,6 +208,48 @@ def test_validation():
         print("✗ Should accept 'exclue' as alias for 'exclude'")
 
 
+def test_obs_transform_step():
+    """Test applying obs column transform to a tiny AnnData."""
+    print("\nTesting obs column transform apply()...")
+
+    import numpy as np
+    from anndata import AnnData
+
+    adata = AnnData(X=np.zeros((3, 1)))
+    adata.obs["drugname_drugconc"] = [
+        "[('Infigratinib', 5.0, 'uM')]",
+        [("Erdafitinib ", 10.0, "uM")],
+        None,
+    ]
+
+    cfg = ObsColumnTransformConfig(
+        input_columns=["drugname_drugconc"],
+        operations=[
+            {"op": "parse_python_literal"},
+            {"op": "first"},
+            {"op": "pick_indices", "indices": [1, 2]},
+            {"op": "join", "sep": " "},
+        ],
+        output_column="dose",
+        on_error="set_null",
+    )
+
+    adata2, stats = cfg.apply(adata)
+    doses = list(adata2.obs["dose"])
+    print(f"  doses: {doses}")
+    import pandas as pd
+
+    if doses[0] == "5.0 uM" and doses[1] == "10.0 uM" and pd.isna(doses[2]):
+        print("✓ Transform produced expected 'dose' values")
+    else:
+        print("✗ Unexpected transform output")
+
+    if stats.get("n_row_errors") == 1:
+        print("✓ Row error counting works")
+    else:
+        print("✗ Expected 1 row error")
+
+
 if __name__ == "__main__":
     print("=" * 80)
     print("filter_h5ads Configuration Tests")
@@ -187,6 +261,7 @@ if __name__ == "__main__":
     test_config_serialization()
     test_enabled_filters()
     test_validation()
+    test_obs_transform_step()
 
     print("\n" + "=" * 80)
     print("All configuration tests complete!")

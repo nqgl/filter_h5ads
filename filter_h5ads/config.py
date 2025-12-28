@@ -16,6 +16,7 @@ from filter_h5ads.filters import (
     GeneDetectionFilterConfig,
     GuideFilterConfig,
     MitochondrialFilterConfig,
+    ObsColumnTransformConfig,
     ObsValueFilterConfig,
     UMIFilterConfig,
 )
@@ -26,7 +27,7 @@ class FilterPipelineConfig(BaseModel):
 
     Defines the complete filtering pipeline by composing individual filter configs.
     The pipeline is executed in the order:
-    Ensembl -> Obs Value -> UMI -> Guide -> Mito -> Gene.
+    Ensembl -> Obs Column Transform -> Obs Value -> UMI -> Guide -> Mito -> Gene.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
@@ -35,6 +36,10 @@ class FilterPipelineConfig(BaseModel):
     ensembl_conversion: EnsemblConversionConfig | None = Field(
         default=None,
         description="Ensembl ID conversion configuration",
+    )
+    obs_column_transform: ObsColumnTransformConfig | None = Field(
+        default=None,
+        description="Derive a new .obs column by transforming existing .obs values",
     )
     obs_value_filter: ObsValueFilterConfig | None = Field(
         default=None,
@@ -110,6 +115,9 @@ class FilterPipelineConfig(BaseModel):
         # Ensembl conversion should happen first (preprocessing)
         if self.ensembl_conversion is not None and self.ensembl_conversion.enabled:
             filters.append(("ensembl_conversion", self.ensembl_conversion))
+
+        if self.obs_column_transform is not None and self.obs_column_transform.enabled:
+            filters.append(("obs_column_transform", self.obs_column_transform))
 
         if self.obs_value_filter is not None and self.obs_value_filter.enabled:
             filters.append(("obs_value_filter", self.obs_value_filter))

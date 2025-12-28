@@ -5,7 +5,6 @@ provenance information.
 """
 
 import time
-from datetime import datetime
 from typing import Any
 
 from anndata import AnnData
@@ -22,11 +21,12 @@ def run_pipeline(
 
     The pipeline applies enabled steps in the following order:
     1. Ensembl conversion (preprocessing)
-    2. Obs value filter (include/exclude values)
-    3. UMI count filter
-    4. Guide quality filter
-    5. Mitochondrial content filter
-    6. Gene detection filter
+    2. Obs column transform (derive new .obs column)
+    3. Obs value filter (include/exclude values)
+    4. UMI count filter
+    5. Guide quality filter
+    6. Mitochondrial content filter
+    7. Gene detection filter
 
     Only enabled filters are applied.
 
@@ -168,5 +168,12 @@ def validate_pipeline_config(config: FilterPipelineConfig, adata: AnnData) -> li
             col = filter_config.key
             if col not in obs_columns:
                 errors.append(f"{filter_name}: Missing column '{col}' in .obs")
+
+        if hasattr(filter_config, "input_columns"):
+            cols = getattr(filter_config, "input_columns")
+            if isinstance(cols, list):
+                for col in cols:
+                    if col not in obs_columns:
+                        errors.append(f"{filter_name}: Missing column '{col}' in .obs")
 
     return errors
