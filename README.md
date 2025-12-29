@@ -79,6 +79,8 @@ from filter_h5ads import (
     print_h5ad_overview,
     FilterPipelineConfig,
     GeneDetectionFilterConfig,
+    GroupCountFilterConfig,
+    GroupCountAnnotateConfig,
     ObsColumnTransformConfig,
     PseudobulkConfig,
     UMIFilterConfig,
@@ -111,6 +113,14 @@ config = FilterPipelineConfig(
     guide_filter=GuideFilterConfig(guide_column='pass_guide_filter'),
     mito_filter=MitochondrialFilterConfig(max_pct_mt=20.0),
     gene_filter=GeneDetectionFilterConfig(min_genes=200),
+    group_count_annotate=GroupCountAnnotateConfig(
+        groupby=["cell_line", "drug", "dose"],
+        output_column="n_cells_in_condition",
+    ),
+    group_count_filter=GroupCountFilterConfig(
+        groupby=["cell_line", "drug", "dose"],
+        min_cells=50,
+    ),
     pseudobulk=PseudobulkConfig(
         groupby=["cell_line", "drug", "dose"],
         obs_aggregations={
@@ -132,7 +142,7 @@ output_path = save_filtered_h5ad(adata_filtered, Path("data.h5ad"), config)
 
 ## Pipeline Configuration
 
-Each filter can be independently configured and enabled/disabled. The pipeline executes in order: **Ensembl Conversion** → **Obs Column Transform** → **Obs Value** → UMI → Guide → Mito → Gene → **Pseudobulk**.
+Each filter can be independently configured and enabled/disabled. The pipeline executes in order: **Ensembl Conversion** → **Obs Column Transform** → **Obs Value** → UMI → Guide → Mito → Gene → **Group Count Annotate** → **Group Count Filter** → **Pseudobulk**.
 
 ### Ensembl ID Conversion (Preprocessing)
 ```python
@@ -194,6 +204,22 @@ PseudobulkConfig(
         "gene_target": {"agg": "proportions", "output_column": "gene_target_props"},
         # Unspecified `.obs` columns are dropped by default.
     },
+)
+```
+
+### Group Count Filter (min cells per condition)
+```python
+GroupCountFilterConfig(
+    groupby=["cell_line", "drug", "dosage"],
+    min_cells=50,  # keep only conditions with ≥50 cells
+)
+```
+
+### Group Count Annotate (group size per cell)
+```python
+GroupCountAnnotateConfig(
+    groupby=["cell_line", "drug", "dosage"],
+    output_column="n_cells_in_condition",
 )
 ```
 

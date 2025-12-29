@@ -27,7 +27,9 @@ def run_pipeline(
     5. Guide quality filter
     6. Mitochondrial content filter
     7. Gene detection filter
-    8. Pseudobulk (group + sum counts)
+    8. Group count annotate (group size per cell)
+    9. Group count filter (min cells per condition)
+    10. Pseudobulk (group + sum counts)
 
     Only enabled filters are applied.
 

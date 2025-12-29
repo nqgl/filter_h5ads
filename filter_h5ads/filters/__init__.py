@@ -11,6 +11,12 @@ from filter_h5ads.filters.gene_detection import (
     GeneDetectionFilterConfig as GeneDetectionFilterConfig,
 )
 from filter_h5ads.filters.guide_filter import GuideFilterConfig as GuideFilterConfig
+from filter_h5ads.filters.group_count_annotate import (
+    GroupCountAnnotateConfig as GroupCountAnnotateConfig,
+)
+from filter_h5ads.filters.group_count_filter import (
+    GroupCountFilterConfig as GroupCountFilterConfig,
+)
 from filter_h5ads.filters.mitochondrial import (
     MitochondrialFilterConfig as MitochondrialFilterConfig,
 )

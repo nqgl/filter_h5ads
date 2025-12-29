@@ -17,6 +17,12 @@ from filter_h5ads.config import (
     GeneDetectionFilterConfig as GeneDetectionFilterConfig,
 )
 from filter_h5ads.config import (
+    GroupCountAnnotateConfig as GroupCountAnnotateConfig,
+)
+from filter_h5ads.config import (
+    GroupCountFilterConfig as GroupCountFilterConfig,
+)
+from filter_h5ads.config import (
     GuideFilterConfig as GuideFilterConfig,
 )
 from filter_h5ads.config import (
