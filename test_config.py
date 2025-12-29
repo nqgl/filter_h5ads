@@ -6,6 +6,8 @@ Tests config creation, hashing, and serialization without requiring real data.
 from filter_h5ads import (
     FilterPipelineConfig,
     GeneDetectionFilterConfig,
+    GroupCountAnnotateConfig,
+    GroupCountFilterConfig,
     GuideFilterConfig,
     MitochondrialFilterConfig,
     ObsColumnTransformConfig,
@@ -41,6 +43,14 @@ def test_config_creation():
         guide_filter=GuideFilterConfig(guide_column="pass_guide_filter"),
         mito_filter=MitochondrialFilterConfig(max_pct_mt=20.0),
         gene_filter=GeneDetectionFilterConfig(min_genes=200),
+        group_count_annotate=GroupCountAnnotateConfig(
+            groupby=["cell_line", "drug", "dose"],
+            output_column="n_cells_in_condition",
+        ),
+        group_count_filter=GroupCountFilterConfig(
+            groupby=["cell_line", "drug", "dose"],
+            min_cells=50,
+        ),
         pseudobulk=PseudobulkConfig(
             groupby=["cell_line", "drug", "dose"],
             obs_aggregations={"batch": {"agg": "assert_constant"}},

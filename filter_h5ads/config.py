@@ -14,6 +14,8 @@ from filter_h5ads.filters import (
     EnsemblConversionConfig,
     FilterStepConfig,
     GeneDetectionFilterConfig,
+    GroupCountAnnotateConfig,
+    GroupCountFilterConfig,
     GuideFilterConfig,
     MitochondrialFilterConfig,
     ObsColumnTransformConfig,
@@ -28,7 +30,8 @@ class FilterPipelineConfig(BaseModel):
 
     Defines the complete filtering pipeline by composing individual filter configs.
     The pipeline is executed in the order:
-    Ensembl -> Obs Column Transform -> Obs Value -> UMI -> Guide -> Mito -> Gene -> Pseudobulk.
+    Ensembl -> Obs Column Transform -> Obs Value -> UMI -> Guide -> Mito -> Gene
+    -> Group Count Annotate -> Group Count Filter -> Pseudobulk.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
@@ -61,6 +64,14 @@ class FilterPipelineConfig(BaseModel):
     gene_filter: GeneDetectionFilterConfig | None = Field(
         default=None,
         description="Gene detection filter configuration",
+    )
+    group_count_annotate: GroupCountAnnotateConfig | None = Field(
+        default=None,
+        description="Add a .obs column with the per-group cell count",
+    )
+    group_count_filter: GroupCountFilterConfig | None = Field(
+        default=None,
+        description="Filter cells by minimum cell count per group/condition",
     )
     pseudobulk: PseudobulkConfig | None = Field(
         default=None,
@@ -135,6 +146,12 @@ class FilterPipelineConfig(BaseModel):
             filters.append(("mito_filter", self.mito_filter))
         if self.gene_filter is not None and self.gene_filter.enabled:
             filters.append(("gene_filter", self.gene_filter))
+
+        if self.group_count_annotate is not None and self.group_count_annotate.enabled:
+            filters.append(("group_count_annotate", self.group_count_annotate))
+
+        if self.group_count_filter is not None and self.group_count_filter.enabled:
+            filters.append(("group_count_filter", self.group_count_filter))
 
         if self.pseudobulk is not None and self.pseudobulk.enabled:
             filters.append(("pseudobulk", self.pseudobulk))
