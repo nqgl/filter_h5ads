@@ -20,4 +20,5 @@ from filter_h5ads.filters.obs_column_transform import (
 from filter_h5ads.filters.obs_value_filter import (
     ObsValueFilterConfig as ObsValueFilterConfig,
 )
+from filter_h5ads.filters.pseudobulk import PseudobulkConfig as PseudobulkConfig
 from filter_h5ads.filters.umi_filter import UMIFilterConfig as UMIFilterConfig

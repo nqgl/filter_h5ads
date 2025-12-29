@@ -18,6 +18,7 @@ from filter_h5ads.filters import (
     MitochondrialFilterConfig,
     ObsColumnTransformConfig,
     ObsValueFilterConfig,
+    PseudobulkConfig,
     UMIFilterConfig,
 )
 
@@ -27,7 +28,7 @@ class FilterPipelineConfig(BaseModel):
 
     Defines the complete filtering pipeline by composing individual filter configs.
     The pipeline is executed in the order:
-    Ensembl -> Obs Column Transform -> Obs Value -> UMI -> Guide -> Mito -> Gene.
+    Ensembl -> Obs Column Transform -> Obs Value -> UMI -> Guide -> Mito -> Gene -> Pseudobulk.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
@@ -60,6 +61,10 @@ class FilterPipelineConfig(BaseModel):
     gene_filter: GeneDetectionFilterConfig | None = Field(
         default=None,
         description="Gene detection filter configuration",
+    )
+    pseudobulk: PseudobulkConfig | None = Field(
+        default=None,
+        description="Group cells by .obs keys and sum counts into pooled samples",
     )
 
     def get_hash(self) -> str:
@@ -130,5 +135,8 @@ class FilterPipelineConfig(BaseModel):
             filters.append(("mito_filter", self.mito_filter))
         if self.gene_filter is not None and self.gene_filter.enabled:
             filters.append(("gene_filter", self.gene_filter))
+
+        if self.pseudobulk is not None and self.pseudobulk.enabled:
+            filters.append(("pseudobulk", self.pseudobulk))
 
         return filters

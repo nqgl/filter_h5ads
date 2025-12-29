@@ -80,6 +80,7 @@ from filter_h5ads import (
     FilterPipelineConfig,
     GeneDetectionFilterConfig,
     ObsColumnTransformConfig,
+    PseudobulkConfig,
     UMIFilterConfig,
     GuideFilterConfig,
     MitochondrialFilterConfig,
@@ -109,7 +110,17 @@ config = FilterPipelineConfig(
     umi_filter=UMIFilterConfig(min_counts=15000),
     guide_filter=GuideFilterConfig(guide_column='pass_guide_filter'),
     mito_filter=MitochondrialFilterConfig(max_pct_mt=20.0),
-    gene_filter=GeneDetectionFilterConfig(min_genes=200)
+    gene_filter=GeneDetectionFilterConfig(min_genes=200),
+    pseudobulk=PseudobulkConfig(
+        groupby=["cell_line", "drug", "dose"],
+        obs_aggregations={
+            "batch": {"agg": "assert_constant"},
+            "total_counts": {"agg": "sum", "output_column": "total_counts_sum"},
+            "pct_counts_mt": {"agg": "mean"},
+            "cell_barcode": {"agg": "list"},
+            "gene_target": {"agg": "proportions", "output_column": "gene_target_props"},
+        },
+    ),
 )
 
 # Run pipeline
@@ -121,7 +132,7 @@ output_path = save_filtered_h5ad(adata_filtered, Path("data.h5ad"), config)
 
 ## Pipeline Configuration
 
-Each filter can be independently configured and enabled/disabled. The pipeline executes in order: **Ensembl Conversion** → **Obs Column Transform** → **Obs Value** → UMI → Guide → Mito → Gene.
+Each filter can be independently configured and enabled/disabled. The pipeline executes in order: **Ensembl Conversion** → **Obs Column Transform** → **Obs Value** → UMI → Guide → Mito → Gene → **Pseudobulk**.
 
 ### Ensembl ID Conversion (Preprocessing)
 ```python
@@ -166,6 +177,23 @@ ObsColumnTransformConfig(
     output_column="dose",
     overwrite=False,
     on_error="raise",
+)
+```
+
+### Pseudobulk (group + sum counts)
+```python
+PseudobulkConfig(
+    groupby=["cell_line", "drug", "dose"],  # any unique combination becomes 1 pooled sample
+    layer=None,                              # sum `.X` (set to a layer name to sum `.layers[layer]`)
+    obs_aggregations={
+        # For each non-groupby `.obs` column you care about, specify how to aggregate it:
+        "batch": {"agg": "assert_constant"},
+        "total_counts": {"agg": "sum", "output_column": "total_counts_sum"},
+        "pct_counts_mt": {"agg": "mean"},
+        "cell_barcode": {"agg": "list"},  # list of values across pooled cells
+        "gene_target": {"agg": "proportions", "output_column": "gene_target_props"},
+        # Unspecified `.obs` columns are dropped by default.
+    },
 )
 ```
 

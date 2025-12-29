@@ -28,6 +28,7 @@ def run_pipeline(
     5. Guide quality filter
     6. Mitochondrial content filter
     7. Gene detection filter
+    8. Pseudobulk (group + sum counts)
 
     Only enabled filters are applied.
 
@@ -172,6 +173,13 @@ def validate_pipeline_config(config: FilterPipelineConfig, adata: AnnData) -> li
 
         if hasattr(filter_config, "input_columns"):
             cols = getattr(filter_config, "input_columns")
+            if isinstance(cols, list):
+                for col in cols:
+                    if col not in obs_columns:
+                        errors.append(f"{filter_name}: Missing column '{col}' in .obs")
+
+        if hasattr(filter_config, "groupby"):
+            cols = getattr(filter_config, "groupby")
             if isinstance(cols, list):
                 for col in cols:
                     if col not in obs_columns:
