@@ -26,6 +26,13 @@ from filter_h5ads import (
     run_pipeline,
     save_filtered_h5ad,
 )
+from filter_h5ads.filters.obs_column_transform import (
+    IndexOp,
+    ObsColumnTransformConfig,
+    ParsePythonLiteralOp,
+    SliceOp,
+    ToStringOp,
+)
 from filter_h5ads.mask import mask
 
 
@@ -69,9 +76,25 @@ def main():
         # ),
         # Step 4: Mitochondrial Content Filter
         # Remove dead/dying cells with high mitochondrial percentage
+        obs_column_transform=ObsColumnTransformConfig(
+            input_columns=["drugname_drugconc"],
+            operations=[
+                ParsePythonLiteralOp(),
+                IndexOp(index=0),
+                IndexOp(index=1),
+                ToStringOp(),
+                SliceOp(stop=3),
+            ],
+            output_column="dose",
+            enabled=True,
+        ),
         obs_value_filter=ObsValueFilterConfig(
             key="cell-type",
-            values=["doublet", "low_qc"],
+            values=[
+                "NCI-H661",
+                "NCI-H596",
+                "NCI-H2122",
+            ],
             exclude=True,
             enabled=True,
         ),

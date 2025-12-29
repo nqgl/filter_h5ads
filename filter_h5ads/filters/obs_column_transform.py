@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import ast
 from collections.abc import Iterable, Iterator
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal
 
 import pandas as pd
 from anndata import AnnData
@@ -50,29 +50,32 @@ class ParsePythonLiteralOp(_ValueOp):
         return ast.literal_eval(value)
 
 
-class FirstOp(_ValueOp):
-    """Take the first element of a list/tuple."""
-
-    op: Literal["first"] = "first"
-
-    def run(self, value: Any) -> Any:
-        if not isinstance(value, (list, tuple)):
-            raise TypeError(f"first expected list/tuple, got {type(value).__name__}")
-        if len(value) == 0:
-            raise ValueError("first expected a non-empty list/tuple")
-        return value[0]
-
-
 class IndexOp(_ValueOp):
     """Index into a list/tuple."""
 
     op: Literal["index"] = "index"
-    index: int = Field(description="Index to select")
+    index: int = Field(default=0, description="Index to select")
 
     def run(self, value: Any) -> Any:
         if not isinstance(value, (list, tuple)):
             raise TypeError(f"index expected list/tuple, got {type(value).__name__}")
         return value[self.index]
+
+
+class SliceOp(_ValueOp):
+    """Slice a list/tuple/string using Python slice semantics [start:stop:step]."""
+
+    op: Literal["slice"] = "slice"
+    start: int | None = Field(default=None, description="Start index (inclusive)")
+    stop: int | None = Field(default=None, description="Stop index (exclusive)")
+    step: int | None = Field(default=None, description="Step size")
+
+    def run(self, value: Any) -> Any:
+        if not isinstance(value, (list, tuple, str)):
+            raise TypeError(
+                f"slice expected list/tuple/str, got {type(value).__name__}"
+            )
+        return value[self.start : self.stop : self.step]
 
 
 class PickIndicesOp(_ValueOp):
@@ -111,14 +114,13 @@ class ToStringOp(_ValueOp):
 
 
 ValueOp = Annotated[
-    Union[
-        ParsePythonLiteralOp,
-        FirstOp,
-        IndexOp,
-        PickIndicesOp,
-        JoinOp,
-        ToStringOp,
-    ],
+    ParsePythonLiteralOp
+    | IndexOp
+    | IndexOp
+    | SliceOp
+    | PickIndicesOp
+    | JoinOp
+    | ToStringOp,
     Field(discriminator="op"),
 ]
 
