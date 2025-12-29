@@ -9,6 +9,7 @@ from filter_h5ads import (
     GuideFilterConfig,
     MitochondrialFilterConfig,
     ObsColumnTransformConfig,
+    PseudobulkConfig,
     ObsValueFilterConfig,
     UMIFilterConfig,
 )
@@ -40,6 +41,10 @@ def test_config_creation():
         guide_filter=GuideFilterConfig(guide_column="pass_guide_filter"),
         mito_filter=MitochondrialFilterConfig(max_pct_mt=20.0),
         gene_filter=GeneDetectionFilterConfig(min_genes=200),
+        pseudobulk=PseudobulkConfig(
+            groupby=["cell_line", "drug", "dose"],
+            obs_aggregations={"batch": {"agg": "assert_constant"}},
+        ),
     )
 
     print(f"✓ Created config: {config.pipeline_name}")
@@ -113,6 +118,10 @@ def test_config_serialization():
         ),
         umi_filter=UMIFilterConfig(min_counts=15000),
         guide_filter=GuideFilterConfig(guide_column="pass_guide_filter"),
+        pseudobulk=PseudobulkConfig(
+            groupby=["cell_line", "drug", "dose"],
+            obs_aggregations={"batch": {"agg": "assert_constant"}},
+        ),
     )
 
     # Save to temp file

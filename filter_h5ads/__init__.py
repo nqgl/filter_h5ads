@@ -26,6 +26,9 @@ from filter_h5ads.config import (
     ObsColumnTransformConfig as ObsColumnTransformConfig,
 )
 from filter_h5ads.config import (
+    PseudobulkConfig as PseudobulkConfig,
+)
+from filter_h5ads.config import (
     ObsValueFilterConfig as ObsValueFilterConfig,
 )
 from filter_h5ads.config import (
